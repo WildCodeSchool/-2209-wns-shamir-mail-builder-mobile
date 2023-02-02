@@ -1,32 +1,53 @@
-import { StatusBar } from 'expo-status-bar';
-import { ApolloClient, InMemoryCache, ApolloProvider } from '@apollo/client';
-import { StyleSheet, Text, View } from 'react-native';
-import { NavigationContainer } from '@react-navigation/native';
-import { createNativeStackNavigator } from '@react-navigation/native-stack';
-import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
-import Ionicons from "@expo/vector-icons/Ionicons";
-import LoginScreen from './screens/LoginScreen';
-import DashboardScreen from './screens/DashboardScreen';
+import { ApolloClient, InMemoryCache, ApolloProvider, createHttpLink } from '@apollo/client';
+import { setContext } from "@apollo/client/link/context";
+import { StyleSheet, AppRegistry } from 'react-native';
+import { Provider as PaperProvider } from 'react-native-paper';
+import { Provider as ReduxProvider } from 'react-redux';
+import * as SecureStore from "expo-secure-store";
+import Router from './Router/Router';
+import { store } from './store';
+
+import Constants from "expo-constants";
+
+const { manifest } = Constants;
+
+// @ts-ignore:
+const uri = `http://${manifest?.debuggerHost?.split(':').shift()}:5000/graphql`;
+const httpLink = createHttpLink({
+  uri,
+});
+
+const authLink = setContext(async (_, { headers }) => {
+  const token = await SecureStore.getItemAsync("token");
+
+  return {
+    headers: {
+      ...headers,
+      authorization: token ? `Bearer ${token}` : "",
+    },
+  };
+});
 
 const client = new ApolloClient({
-  uri: 'http://192.168.1.82:5000/graphql',
+  link: authLink.concat(httpLink),
   cache: new InMemoryCache(),
 });
 
-const Stack = createNativeStackNavigator();
+const appName: string = 'mobile-builder';
 
 export default function App() {
   return (
     <ApolloProvider client={client}>
-        <NavigationContainer>
-          <Stack.Navigator initialRouteName="Connexion">
-            <Stack.Screen name="Connexion" component={LoginScreen} />
-            <Stack.Screen name="Dashboard" component={DashboardScreen} />
-          </Stack.Navigator>
-        </NavigationContainer>
+      <ReduxProvider store={store}>
+        <PaperProvider>
+          <Router />  
+        </PaperProvider>
+      </ReduxProvider>
     </ApolloProvider>
   );
 }
+
+AppRegistry.registerComponent(appName, () => App);
 
 const styles = StyleSheet.create({
   container: {

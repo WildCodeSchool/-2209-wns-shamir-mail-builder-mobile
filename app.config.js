@@ -1,6 +1,7 @@
-{
+import "dotenv/config";
+export default {
   "expo": {
-    "name": "mobile",
+    "name": "mobile-builder",
     "slug": "mobile",
     "version": "1.0.0",
     "orientation": "portrait",
@@ -28,6 +29,9 @@
     },
     "web": {
       "favicon": "./assets/favicon.png"
+    },
+    "extra": {
+      backendEndpoint: process.env.BACKEND_DEV_ENDPOINT
     }
   }
 }
